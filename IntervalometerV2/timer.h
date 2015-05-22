@@ -251,7 +251,4 @@ private:
   
 };
 
-
-
-
 #endif /* defined(__IntervalometerV2__test__) */

@@ -35,7 +35,7 @@
 #include <arduino.h>
 
 // local includes
-#include "LocalLibrary.h"
+#include "LocalLibrary.h" // some prototypes live here for now
 #include "timer.h"
 #include "defaults.h"
 
