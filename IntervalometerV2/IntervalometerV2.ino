@@ -16,22 +16,31 @@
 
 #include <Arduino.h>
 #include <arduino.h>
-#include "LocalLibrary.h"
-//#include "AFMotor.h"
-//#include <SoftwareSerial.h>
-//#include "Adafruit_MotorShield.h"
 
+// local includes
+#include "LocalLibrary.h"
+#include "timer.h"
+
+Timer mTimer;
+
+/*
+ #include "AFMotor.h"
+#include <SoftwareSerial.h>
+#include "Adafruit_MotorShield.h"
+*/
 //const defs
 
 //not used
-#define ESTART 1
+/*
+ #define ESTART 1
 #define ESTAGE 3
-#define EFOCUS 8
-#define ELIGHTS 12
 #define ETRIG 18
 #define EUNTRIG 19
 //#define ESYNC 20
 #define ERESET 39
+*/
+#define EFOCUS 8
+#define ELIGHTS 12
 
 //defs for g-code interpreter
 #define VERSION    (2)  // firmware version
@@ -101,55 +110,6 @@ int mMultishotLocalTakesCurrent;
 int sNextEvent;
 
   /////////////////
- // timing vars //
-/////////////////
-class Timer {
-private:
-  
-  
-public:
-  // setters
-  
-  
-  // getters
-  
-};
-unsigned long mFocusHold; //(0=off;1+ no ms to spend focusing before taking pic, setting)
-unsigned long mShutterHold; //(to be replaced later with x-sync detection, time to wait for camera;setting)
-unsigned long mButtonHold; //(time to hold trigger line low default 5ms)
-
-unsigned long mLightingLag; //(no of ms before sync to switch lighting;setting, default 100ms)
-unsigned long mShutterLag; //(time between trigger and sync;preset)
-unsigned long mInterShotLag; //(fastest time between sync times that camera can handle;preset)
-
-unsigned long mBaseTimeToMarkStartOfShot; // base time to mark start of shot
-unsigned long mBaseTimeToMarkStartOfSequence; // base time to mark start of sequence
-boolean mUseMechanicalMovement; // whether mechanical movement is required
-boolean mUseDesired; // whether to use desired of not;
-long mGlobalgDesired; //(desired, but references from milli's, temp store for before mBaseTimeToMarkStartOfShot is known)
-long mDesired; //(time at which the shutter is desired to go off;calculated at start of shot) (referenced from mBaseTimeToMarkStartOfShot)
-long mShutterExpectedOpenTimeCalculated; //(time at which the shutter is expected, to be fully open;calculated) (referenced from mBaseTimeToMarkStartOfShot)
-//unsigned long mInterval; //( time delay between shot sync times, may be 0 for "fast";setting)
-
-unsigned long mLastTimeCameraTriggered;
-// mLastTimeCameraTriggered: the last time the camera triggered (should likely be when the shutter closed??) (referenced from millis)
-
-// @TODO implement time to next event
-long mTimeToNextEvent; // time to next event -- indicates how much time functions can use.
-
-long mNextEventTime; // (time the next event should happen) (from mBaseTimeToMarkStartOfShot)
-long mTimeToStartFocusMode; // planned time to start focus mode (from mBaseTimeToMarkStartOfShot)
-long mTimeToSetLightingMode; // planned time to set lighing mode (from mBaseTimeToMarkStartOfShot)
-long mTimeToSendTrigger; // planned time to send trigger (from mBaseTimeToMarkStartOfShot)
-long mTimeToStopTrigger; // planned time to stop trigger (from mBaseTimeToMarkStartOfShot)
-long mTimeToRestart; // planned time to finish & start next shot (from mBaseTimeToMarkStartOfShot)
-
-boolean mDoneStartFocusMode; // done start focus mode
-boolean mDoneSetLightingMode; // done set lighing mode
-boolean mDoneSendTrigger; // done send trigger
-boolean mDoneStopTrigger; // done stop trigger
-
-  /////////////////
  //  Functions  //
 /////////////////
 
@@ -180,7 +140,9 @@ void CallMech()
 void CallFocus()
 {
   digitalWrite(mLightDiagnosticsPin,LOW);
-  mDoneStartFocusMode = true;
+  
+  //mDoneStartFocusMode = true;
+  mTimer.setDoneStartFocusMode(true);
   //focus lighting on
   digitalWrite(mFocusLED,LOW); // pwm active low
   //focus trigger on
@@ -190,8 +152,8 @@ void CallFocus()
 void CallLights()
 {
   digitalWrite(mLightDiagnosticsPin,HIGH);
-  mDoneSetLightingMode = true;
-
+  //mDoneSetLightingMode = true;
+  mTimer.setDoneSetLightingMode(true);
   //ambient lighting off
   digitalWrite(mTurnOffLED,HIGH); //ambient light, Active low
   digitalWrite(mPanelLcdLED,HIGH); // panel LED, active low
@@ -205,21 +167,24 @@ void CallLights()
 void CallTrigger()
 {
   digitalWrite(mLightDiagnosticsPin,LOW);
-  mDoneSendTrigger = true;
-  
+  //mDoneSendTrigger = true;
+  mTimer.setDoneSendTrigger(true);
   //main trigger on
   digitalWrite(mTriggerOut,HIGH); // active high
   
   Serial.println(millis());
   
   //store last trigger value using current sync value
-  mLastTimeCameraTriggered = mShutterExpectedOpenTimeCalculated+mBaseTimeToMarkStartOfShot;
+  //mLastTimeCameraTriggered = mShutterExpectedOpenTimeCalculated+mBaseTimeToMarkStartOfShot;
+  unsigned long myTemp = mTimer.ShutterExpectedOpenTimeCalculated();
+  unsigned long myTemp2 = mTimer.BaseTimeToMarkStartOfShot();
+  mTimer.setLastTimeCameraTriggered(myTemp + myTemp2);
 }
 
 void CallUnTrig()
 {
   digitalWrite(mLightDiagnosticsPin,HIGH);
-  mDoneStopTrigger = true;
+  mTimer.setDoneStopTrigger(true);
   
   //main trigger off
   digitalWrite(mTriggerOut,LOW); // active high
@@ -267,15 +232,14 @@ void setup() {
   
   //@TODO load settings from somewhere; until then, just set defaults
   
-  mFocusHold = 400;
-  mLightingLag = 100;
-  mShutterHold = 100;
-  mButtonHold = 10;
+  mTimer.setFocusHold(400);
+  mTimer.setLightingLag(100);
+  mTimer.setShutterHold(100);
+  mTimer.setButtonHold(10);
   
-  mShutterLag = 10;
-  mInterShotLag = 1000; //max 2.5fps
-  
-  mLastTimeCameraTriggered = 0;
+  mTimer.setShutterLag(10);
+  mTimer.setInterShootLag(1000); //max 2.5fps
+  mTimer.setLastTimeCameraTriggered(0);
   
   pinMode(mTurnOffLED, OUTPUT); //ambient light, Active low
   digitalWrite(mTurnOffLED,LOW);
@@ -311,7 +275,7 @@ void setup() {
 
 unsigned long GetBaseTimeToMarkStartOfShot()
 {
-  return millis() - mBaseTimeToMarkStartOfShot;
+  return millis() - mTimer.BaseTimeToMarkStartOfShot();
 }
 
 void EndMultiShot()
@@ -326,9 +290,9 @@ void EndMultiShot()
 void UpdateGDesired(unsigned long theInput) // TODO -- check this actually works
 {
   //update only if larger, but tolerant of clockovers
-  if (theInput - mGlobalgDesired < 3000000000uL)
+  if (theInput - mTimer.GlobalDesired() < 3000000000uL)
   {
-    mGlobalgDesired = theInput;
+    mTimer.setGlobalDesired(theInput);
   }
 }
 
@@ -338,15 +302,20 @@ void RecalculateShot()
   long myTime;
   
   // to prevent camera being over worked do this:
-  mShutterExpectedOpenTimeCalculated = mLastTimeCameraTriggered+mInterShotLag
-                                       - mBaseTimeToMarkStartOfShot;
+  //mShutterExpectedOpenTimeCalculated = mLastTimeCameraTriggered+mInterShotLag
+  //                                     - mBaseTimeToMarkStartOfShot;
+  
+  long myTemp1 = mTimer.LastTimeCameraTriggered();
+  long mytemp2 = mTimer.BaseTimeToMarkStartOfShot();
+  long temp = myTemp1-mytemp2;
+  mTimer.setShutterExpectedOpenTimeCalculated(temp);
   // @TODO: is this referenced correctly, mBaseTimeToMarkStartOfShot???
   //        ... I think so.
   
   //sanity check for the above, default to ~1fps if the it's trying more than a minute delay.
-  if (mShutterExpectedOpenTimeCalculated>60000)
+  if (mTimer.ShutterExpectedOpenTimeCalculated() > 60000)
   {
-    mShutterExpectedOpenTimeCalculated = 1000;
+    mTimer.setShutterExpectedOpenTimeCalculated(1000);
     Serial.println("err: Intershot_lag stuffup");
   }
   
@@ -356,11 +325,14 @@ void RecalculateShot()
   // Serial.print("last_sync= ");Serial.println(last_sync);
   
   // quickest the processes can be sorted out in:
-  myTime = millis() + mFocusHold+mLightingLag - mBaseTimeToMarkStartOfShot;
+  myTime = millis()
+           + mTimer.FocusHold()
+           + mTimer.LightingLag()
+           - mTimer.BaseTimeToMarkStartOfShot();
   
-  if (myTime > mShutterExpectedOpenTimeCalculated)
+  if (myTime > mTimer.ShutterExpectedOpenTimeCalculated())
   {
-    mShutterExpectedOpenTimeCalculated = myTime;
+    mTimer.setShutterExpectedOpenTimeCalculated(myTime);
   }
   
   //Serial.print("t= ");Serial.println(t);
@@ -369,16 +341,21 @@ void RecalculateShot()
   
   // if the desired target time is actually attainable
   // (ie, later than soonest possible time), go with that.
-  if (mUseDesired && mDesired > mShutterExpectedOpenTimeCalculated)
+  if (mTimer.UseDesired() && mTimer.Desired() > mTimer.ShutterExpectedOpenTimeCalculated())
   {
-    mShutterExpectedOpenTimeCalculated = mDesired;
+    mTimer.setShutterExpectedOpenTimeCalculated(mTimer.Desired());
   }
   
-  mTimeToSetLightingMode = mShutterExpectedOpenTimeCalculated - mLightingLag;
-  mTimeToStartFocusMode = mShutterExpectedOpenTimeCalculated - mLightingLag - mFocusHold;
-  mTimeToSendTrigger = mShutterExpectedOpenTimeCalculated - mShutterLag;
-  mTimeToStopTrigger = mTimeToSendTrigger + mButtonHold;
-  mTimeToRestart = mShutterExpectedOpenTimeCalculated + mShutterHold;
+  mTimer.setTimeToSetLightingMode(mTimer.ShutterExpectedOpenTimeCalculated()
+                                  - mTimer.LightingLag());
+  mTimer.setTimeToStartFocusMode(mTimer.ShutterExpectedOpenTimeCalculated()
+                                 - mTimer.LightingLag()
+                                 - mTimer.FocusHold());
+  mTimer.setTimeToSendTrigger(mTimer.ShutterExpectedOpenTimeCalculated()
+                              - mTimer.ShutterLag());
+  mTimer.setTimeToStopTrigger(mTimer.TimeToSendTrigger() + mTimer.ButtonHold());
+  mTimer.setTimeToRestart(mTimer.ShutterExpectedOpenTimeCalculated()
+                          + mTimer.ShutterHold());
   
   //Serial.print("glabal sync= ");Serial.println(mBaseTimeToMarkStartOfShot+sync);
   //Serial.print("sLightsTime= ");Serial.println(sLightsTime);
@@ -390,20 +367,24 @@ void RecalculateShot()
 
 void StartShot()
 {
-  mBaseTimeToMarkStartOfShot = millis();
+  mTimer.setBaseTimeToMarkStartOfShot(millis());
   
   //work out last_sync??
   
   //work out desired??
-  if (mUseDesired) {mDesired = mGlobalgDesired-mBaseTimeToMarkStartOfShot;}
+  if (mTimer.UseDesired())
+  {
+    mTimer.setDesired(mTimer.GlobalDesired()
+                      - mTimer.BaseTimeToMarkStartOfShot());
+  }
   
-  mDoneStartFocusMode = false;
-  mDoneSetLightingMode = false;
-  mDoneSendTrigger = false;
-  mDoneStopTrigger = false;
+  mTimer.setDoneStartFocusMode(false);
+  mTimer.setDoneSetLightingMode(false);
+  mTimer.setDoneSendTrigger(false);
+  mTimer.setDoneStopTrigger(false);
   
   //start stage move if required
-  if (mUseMechanicalMovement)
+  if (mTimer.UseMechanicalMovement())
   {
     CallMech();
     // @TODO -- work out how ot wait for mechanical stuff -- ignore for now.
@@ -411,7 +392,7 @@ void StartShot()
   
   RecalculateShot();
   
-  mFocusHold > 0 ? sNextEvent=EFOCUS : sNextEvent=ELIGHTS;
+  mTimer.FocusHold() > 0 ? sNextEvent=EFOCUS : sNextEvent=ELIGHTS;
 }
 
 void AdvanceMultiShot()
@@ -433,14 +414,14 @@ void AdvanceMultiShot()
         //gDesired = last_sync+mGTakesInterval; //TODO -- fix
         UpdateGDesired(mGlobalTakesLastDesired + mGlobalTakesInterval);
       }
-      mGlobalTakesLastDesired = mGlobalgDesired;
+      mGlobalTakesLastDesired = mTimer.GlobalDesired();
     }
     else //mMech tickover
     {
       //setMotorPosition();X done in shot setup
       UpdateGDesired(mMultishotMechLastDesired + mMultishotMechInterval);
     }
-    mMultishotMechLastDesired = mGlobalgDesired;
+    mMultishotMechLastDesired = mTimer.GlobalDesired();
   }
   else //mLTakes tick
   {
@@ -448,7 +429,7 @@ void AdvanceMultiShot()
     UpdateGDesired(mMultishotLocalTakesLastDesired+mMultishotLocalTakesInterval);
   }
   
-  mMultishotLocalTakesLastDesired = mGlobalgDesired;
+  mMultishotLocalTakesLastDesired = mTimer.GlobalDesired();
   
   if (mIsRunning) {StartShot();}
   
@@ -478,13 +459,36 @@ void CheckEvents()
   unsigned long myNewTime;
   myNewTime = GetBaseTimeToMarkStartOfShot();
   
-  if (!mDoneStartFocusMode && (mTimeToStartFocusMode <= myNewTime)) { CallFocus(); }
-  if (!mDoneSetLightingMode && (mTimeToSetLightingMode <= myNewTime)) { CallLights(); }
-  if (!mDoneSendTrigger && (mTimeToSendTrigger <= myNewTime)) { CallTrigger(); }
-  if (!mDoneStopTrigger && (mTimeToStopTrigger <= myNewTime)) { CallUnTrig(); }
+  if (!mTimer.DoneStartFocusMode()
+      && (mTimer.TimeToStartFocusMode()
+          <= myNewTime))
+  {
+    CallFocus();
+  }
+  if (!mTimer.DoneSetLightingMode()
+      && (mTimer.TimeToSetLightingMode()
+          <= myNewTime))
+  {
+    CallLights();
+  }
+  if (!mTimer.DoneSendTrigger()
+      && (mTimer.TimeToSendTrigger()
+          <= myNewTime))
+  {
+    CallTrigger();
+  }
+  if (!mTimer.DoneStopTrigger()
+      && (mTimer.TimeToStopTrigger()
+          <= myNewTime))
+  {
+    CallUnTrig();
+  }
   
   //reset time??
-  if (mTimeToRestart <= myNewTime) { EndShot(); }
+  if (mTimer.TimeToRestart() <= myNewTime)
+  {
+    EndShot();
+  }
 }
 
 void StartSingle()
@@ -492,8 +496,8 @@ void StartSingle()
   if (mIsRunning) {return;}
   
   Serial.println("starting single");
-  mUseMechanicalMovement = false;
-  mUseDesired = false;
+  mTimer.setUseMechanicalMovement(false);
+  mTimer.setUseDesired(false);
   //gDesired = mBaseTimeToMarkStartOfShot; // desired not relevent for single shots
   mIsRunning = true;
   mShootingMode = SINGLESHOT;
@@ -505,8 +509,8 @@ void StartMulti()
   if (mIsRunning) {return;}
   
   Serial.println("starting multi");
-  mUseMechanicalMovement = true;
-  mUseDesired = true;
+  mTimer.setUseMechanicalMovement(true);
+  mTimer.setUseDesired(true);
   
   //gDesired = mBaseTimeToMarkStartOfShot; // desired not relevent for single shots
   mIsRunning = true;

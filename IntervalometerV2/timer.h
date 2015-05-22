@@ -15,7 +15,6 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef __IntervalometerV2__test__
 #define __IntervalometerV2__test__
 
@@ -78,7 +77,7 @@ public:
   /** desired
     * @REF millis,
     * temp store for before mBaseTimeToMarkStartOfShot is known */
-  long GlobalgDesired() const;
+  long GlobalDesired() const;
 
   /** time at which the shutter is desired to go off
     * calculated at start of shot
@@ -150,53 +149,53 @@ public:
     */
   void setFocusHold(unsigned long theFocusHold);
   
-  void setShutterHold (unsigned long mShutterHold);
+  void setShutterHold (unsigned long theShutterHold);
   
-  void setButtonHold (unsigned long mButtonHold);
+  void setButtonHold (unsigned long theButtonHold);
   
-  void setLightingLag (unsigned long mLightingLag);
+  void setLightingLag (unsigned long theLightingLag);
   
-  void setShutterLag (unsigned long mShutterLag);
+  void setShutterLag (unsigned long theShutterLag);
   
-  void setInterShootLag (unsigned long mInterShotLag);
+  void setInterShootLag (unsigned long theInterShotLag);
   
-  void setBaseTimeToMarkStartOfShot (unsigned long mBaseTimeToMarkStartOfShot);
+  void setBaseTimeToMarkStartOfShot (unsigned long theBaseTimeToMarkStartOfShot);
   
-  void setBaseTimeToMarkStartOfSequence (unsigned long mBaseTimeToMarkStartOfSequence);
+  void setBaseTimeToMarkStartOfSequence (unsigned long theBaseTimeToMarkStartOfSequence);
   
-  void setUseMechanicalMovement (bool mUseMechanicalMovement);
+  void setUseMechanicalMovement (bool theUseMechanicalMovement);
   
-  void setUseDesired (bool mUseDesired);
+  void setUseDesired (bool theUseDesired);
   
-  void setGlobalgDesired (long mGlobalgDesired);
+  void setGlobalDesired (long theGlobalDesired);
   
-  void setDesired (long mDesired);
+  void setDesired (long theDesired);
   
-  void setShutterExpectedOpenTimeCalculated (long mShutterExpectedOpenTimeCalculated);
+  void setShutterExpectedOpenTimeCalculated (long theShutterExpectedOpenTimeCalculated);
   
-  void setLastTimeCameraTriggered (unsigned long mLastTimeCameraTriggered);
+  void setLastTimeCameraTriggered (unsigned long theLastTimeCameraTriggered);
   
-  void setTimeToNextEvent (long mTimeToNextEvent);
+  void setTimeToNextEvent (long theTimeToNextEvent);
   
-  void setNextEventTime (long mNextEventTime);
+  void setNextEventTime (long theNextEventTime);
   
-  void setTimeToStartFocusMode (long mTimeToStartFocusMode);
+  void setTimeToStartFocusMode (long theTimeToStartFocusMode);
   
-  void setTimeToSetLightingMode (long mTimeToSetLightingMode);
+  void setTimeToSetLightingMode (long theTimeToSetLightingMode);
   
-  void setTimeToSendTrigger (long mTimeToSendTrigger);
+  void setTimeToSendTrigger (long theTimeToSendTrigger);
   
-  void setTimeToStopTrigger (long mTimeToStopTrigger);
+  void setTimeToStopTrigger (long theTimeToStopTrigger);
   
-  void setTimeToRestart (long mTimeToRestart);
+  void setTimeToRestart (long theTimeToRestart);
   
-  void setDoneStartFocusMode (bool mDoneStartFocusMode);
+  void setDoneStartFocusMode (bool theDoneStartFocusMode);
   
-  void setDoneSetLightingMode (bool mDoneSetLightingMode);
+  void setDoneSetLightingMode (bool theDoneSetLightingMode);
   
-  void setDoneSendTrigger (bool mDoneSendTrigger);
+  void setDoneSendTrigger (bool theDoneSendTrigger);
   
-  void setDoneStopTrigger (bool mDoneStopTrigger);
+  void setDoneStopTrigger (bool theDoneStopTrigger);
   
 private:
   
@@ -220,7 +219,7 @@ private:
   
   boolean mUseDesired;
   
-  long mGlobalgDesired;
+  long mGlobalDesired;
   
   long mDesired;
   
