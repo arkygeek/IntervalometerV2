@@ -4,15 +4,32 @@
  *
  *  Created on: 28 oct 2014
  * Author: jrp
- */
+ *
 
+ *-------------------------------------------------------------------------*
+ * G-code bits bodged from GNU GPL:                                        *
+ * 2 Axis CNC Demo v2 - supports Adafruit motor shields v1 and v2          *
+ * dan@marginallycelver.com 2013-08-30                                     *
+ * see http://www.github.com/MarginallyClever/GcodeCNCDemo for more info   *
+ *-------------------------------------------------------------------------*/
 
-//------------------------------------------------------------------------------
-// G-code bits bodged from GNU GPL:
-// 2 Axis CNC Demo v2 - supports Adafruit motor shields v1 and v2
-// dan@marginallycelver.com 2013-08-30
-// please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
-//------------------------------------------------------------------------------
+/***************************************************************************\
+ * IntervalometerV2.ino                                                    *
+ * ------------------------------------------------------------------------*
+ * begin              : May 2015                                           *
+ * copyright          : (C) 2015 by Jason Jorgenson.  All rights reserved  *
+ * email              : jjorgenson@gmail.com                               *
+\***************************************************************************/
+
+/***************************************************************************\
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+\***************************************************************************/
+
 
 #include <Arduino.h>
 #include <arduino.h>
