@@ -10,6 +10,7 @@
 		3F2F1F321B0C8F1600EB15A7 /* LocalLibrary.h in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */; };
 		3F2F1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino */; };
 		3F7038231B0F2ECC00485309 /* timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7038211B0F2ECC00485309 /* timer.cpp */; };
+		3F7038261B0F718300485309 /* defaults.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7038241B0F718300485309 /* defaults.cpp */; };
 		3FCF1F2C1B0C8F1600EB15A7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F2B1B0C8F1600EB15A7 /* main.cpp */; };
 		3FCF1F311B0C8F1600EB15A7 /* LocalLibrary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F301B0C8F1600EB15A7 /* LocalLibrary.cpp */; };
 		AA2A150520104738AA000006 /* abi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150520104738AA000006 /* abi.cpp */; };
@@ -405,6 +406,8 @@
 /* Begin PBXFileReference section */
 		3F7038211B0F2ECC00485309 /* timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = timer.cpp; sourceTree = "<group>"; };
 		3F7038221B0F2ECC00485309 /* timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
+		3F7038241B0F718300485309 /* defaults.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = defaults.cpp; sourceTree = "<group>"; };
+		3F7038251B0F718300485309 /* defaults.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = defaults.h; sourceTree = "<group>"; };
 		3FCF1F281B0C8F1600EB15A7 /* Index */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Index; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FCF1F2B1B0C8F1600EB15A7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		3FCF1F2D1B0C8F1600EB15A7 /* Makefile */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
@@ -929,6 +932,8 @@
 				3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */,
 				3F7038211B0F2ECC00485309 /* timer.cpp */,
 				3F7038221B0F2ECC00485309 /* timer.h */,
+				3F7038241B0F718300485309 /* defaults.cpp */,
+				3F7038251B0F718300485309 /* defaults.h */,
 				3FCF1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino */,
 				3FCF1F331B0C8F1600EB15A7 /* Sketchbook */,
 				AAAA150520104738AA000000 /* Resources */,
@@ -2446,6 +2451,7 @@
 				AA2A150520104738AA00000A /* Client.h in Sources */,
 				AA2A150520104738AA00000B /* HardwareSerial.cpp in Sources */,
 				AA2A150520104738AA00000C /* HardwareSerial.h in Sources */,
+				3F7038261B0F718300485309 /* defaults.cpp in Sources */,
 				AA2A150520104738AA00000D /* HardwareSerial0.cpp in Sources */,
 				AA2A150520104738AA00000E /* HardwareSerial1.cpp in Sources */,
 				AA2A150520104738AA00000F /* HardwareSerial2.cpp in Sources */,

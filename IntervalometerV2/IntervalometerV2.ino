@@ -20,56 +20,24 @@
 // local includes
 #include "LocalLibrary.h"
 #include "timer.h"
+#include "defaults.h"
 
 Timer mTimer;
+Defaults mDefaults;
 
-/*
- #include "AFMotor.h"
-#include <SoftwareSerial.h>
-#include "Adafruit_MotorShield.h"
-*/
-//const defs
-
-//not used
-/*
- #define ESTART 1
-#define ESTAGE 3
-#define ETRIG 18
-#define EUNTRIG 19
-//#define ESYNC 20
-#define ERESET 39
-*/
 #define EFOCUS 8
 #define ELIGHTS 12
 
-//defs for g-code interpreter
+/** defs for g-code interpreter */
 #define VERSION    (2)  // firmware version
 #define BAUD       (115200)  // How fast is the Arduino talking?
 #define MAX_BUF    (64)  // What is the longest message Arduino can store?
 
-//pin definitions etc
 
-const int mPs2DataPin = 17;
-const int mPs2IRQpin =  3;
-
-const int mButtonsOnPanel = A1; // analog multi button panel
-const int stopButton = A2; // stop button connected to analog pin, this is not a long term solution.
-const int mTurnOffLED = 10; //ambient light, Active low
-const int mPanelLcdLED = 9; // panel LED, active Low
-const int mTriggerOut = 7; // active high
-const int mFocusLED = 5; // pwm active low
-const int mFocusOut = 4; // active high
-const int mLightDiagnosticsPin = 13; // diagnostics LED -- PWM, active low??.
-//const int preLED = 6; // ambient light active low --- what?
-
-//glabals for g-code interpreting
-
+/* globals for g-code interpreting */
 char mBuffer[MAX_BUF]; // where we store the message until we get a ';'
 int mBufferSize; // how much is in the buffer
 long mLineNumber=0;
-
-//var defs
-
 boolean mIsRunning;
 
 //vars for control of multi-shot stuff
@@ -113,6 +81,89 @@ int sNextEvent;
  //  Functions  //
 /////////////////
 
+void setup() {
+  pinMode(mDefaults.LightDiagnosticsPin(), OUTPUT);
+  
+  Serial.begin(BAUD); // open coms
+  Serial1.begin(BAUD); // open link to g-code interpreter
+  
+  //for serial g-code stuff
+  Help(); // say hello
+  Ready();
+  
+  /** 
+    * @TODO load settings from somewhere; until then, just set defaults
+    */
+  
+  mTimer.setFocusHold(400);
+  mTimer.setLightingLag(100);
+  mTimer.setShutterHold(100);
+  mTimer.setButtonHold(10);
+  
+  mTimer.setShutterLag(10);
+  mTimer.setInterShootLag(1000); //max 2.5fps
+  mTimer.setLastTimeCameraTriggered(0);
+  
+  pinMode(mDefaults.TurnOffLED(), OUTPUT); //ambient light, Active low
+  digitalWrite(mDefaults.TurnOffLED(),LOW);
+  
+  pinMode(mDefaults.PanelLcdLED(), OUTPUT); // panel LED, active low
+  digitalWrite(mDefaults.PanelLcdLED(),LOW);
+  
+  pinMode(mDefaults.TriggerOut(), OUTPUT); // active high
+  digitalWrite(mDefaults.TriggerOut(),LOW);
+  
+  //  pinMode(preLED, OUTPUT); // ambient light active low
+  //  digitalWrite(preLED,LOW);
+  
+  digitalWrite(mDefaults.FocusLED(),HIGH);
+  pinMode(mDefaults.FocusLED(), OUTPUT); // pwm active low
+  digitalWrite(mDefaults.FocusLED(),HIGH);
+  
+  pinMode(mDefaults.FocusOut(), OUTPUT); // active high
+  digitalWrite(mDefaults.FocusOut(),LOW);
+  
+  digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
+  delay(500);
+  digitalWrite(mDefaults.LightDiagnosticsPin(),HIGH);
+  
+  mIsRunning = false;
+  
+  //multishot stuff -- testing defaults
+  //mGTakesCount = 3;
+  //mGTakesInterval = 2000;
+  //mLTakesCount = 2;
+  //mLTakesInterval = 500;
+}
+
+void loop() {
+  if (mIsRunning)
+  {
+    // Serial.print("loop-r");
+    CheckEvents();
+    CheckInputs();
+    
+    //later dev below...
+    //check events (again)
+    //update display
+    
+  }
+  else
+  {
+    CheckInputs();
+    CheckSerial();
+    
+    //Serial.print("loop-n");
+    //update display (later development)
+  }
+}
+
+
+  /////////////////////////////////
+ // Extra Functions to move out //
+/////////////////////////////////
+
+
 void SendZPos(long theInput) // microns
 {
   double myOutput = theInput/1000.0;
@@ -139,38 +190,38 @@ void CallMech()
 
 void CallFocus()
 {
-  digitalWrite(mLightDiagnosticsPin,LOW);
+  digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
   
   //mDoneStartFocusMode = true;
   mTimer.setDoneStartFocusMode(true);
   //focus lighting on
-  digitalWrite(mFocusLED,LOW); // pwm active low
+  digitalWrite(mDefaults.FocusLED(),LOW); // pwm active low
   //focus trigger on
-  digitalWrite(mFocusOut,HIGH); // active high
+  digitalWrite(mDefaults.FocusOut(),HIGH); // active high
 }
 
 void CallLights()
 {
-  digitalWrite(mLightDiagnosticsPin,HIGH);
+  digitalWrite(mDefaults.LightDiagnosticsPin(),HIGH);
   //mDoneSetLightingMode = true;
   mTimer.setDoneSetLightingMode(true);
   //ambient lighting off
-  digitalWrite(mTurnOffLED,HIGH); //ambient light, Active low
-  digitalWrite(mPanelLcdLED,HIGH); // panel LED, active low
+  digitalWrite(mDefaults.TurnOffLED(),HIGH); //ambient light, Active low
+  digitalWrite(mDefaults.PanelLcdLED(),HIGH); // panel LED, active low
   
   //photographic lighting on (for later implementation)
   
   //focus lighting off
-  digitalWrite(mFocusLED,HIGH); // pwm active low
+  digitalWrite(mDefaults.FocusLED(),HIGH); // pwm active low
 }
 
 void CallTrigger()
 {
-  digitalWrite(mLightDiagnosticsPin,LOW);
+  digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
   //mDoneSendTrigger = true;
   mTimer.setDoneSendTrigger(true);
   //main trigger on
-  digitalWrite(mTriggerOut,HIGH); // active high
+  digitalWrite(mDefaults.TriggerOut(),HIGH); // active high
   
   Serial.println(millis());
   
@@ -183,34 +234,35 @@ void CallTrigger()
 
 void CallUnTrig()
 {
-  digitalWrite(mLightDiagnosticsPin,HIGH);
+  digitalWrite(mDefaults.LightDiagnosticsPin(),HIGH);
   mTimer.setDoneStopTrigger(true);
   
   //main trigger off
-  digitalWrite(mTriggerOut,LOW); // active high
+  digitalWrite(mDefaults.TriggerOut(),LOW); // active high
   
   //focus trigger off
-  digitalWrite(mFocusOut,LOW); // active high
+  digitalWrite(mDefaults.FocusOut(),LOW); // active high
 }
 
 void CallResetOutputs() // for later implemention
 {
   //ambient lighting on
-  digitalWrite(mTurnOffLED,LOW); //ambient light, Active low
-  digitalWrite(mPanelLcdLED,LOW); // panel LED, active low
+  digitalWrite(mDefaults.TurnOffLED(),LOW); //ambient light, Active low
+  digitalWrite(mDefaults.PanelLcdLED(),LOW); // panel LED, active low
 }
 
 /**
- * prepares the input buffer to receive a new message and tells the serial connected device it is ready for more.
- */
+  * prepares the input buffer to receive a new message
+  * and tells the serial connected device it is ready for more.
+  */
 void Ready() {
   mBufferSize=0; // clear input buffer
   Serial.print(F(">")); // signal ready to receive input
 }
 
 /**
- * display helpful information
- */
+  * display helpful information
+  */
 void Help() {
   Serial.print(F("intervalometer with Gcode  "));
   Serial.println(VERSION);
@@ -218,59 +270,6 @@ void Help() {
   Serial.println(F("T1;-- trigger camera fully once"));
   Serial.println(F("T2;-- trigger full programed sequence"));
   Serial.println(F("T100;- this help message"));
-}
-
-void setup() {
-  pinMode(mLightDiagnosticsPin, OUTPUT);
-  
-  Serial.begin(BAUD); // open coms
-  Serial1.begin(BAUD); // open link to g-code interpreter
-  
-  //for serial g-code stuff
-  Help(); // say hello
-  Ready();
-  
-  //@TODO load settings from somewhere; until then, just set defaults
-  
-  mTimer.setFocusHold(400);
-  mTimer.setLightingLag(100);
-  mTimer.setShutterHold(100);
-  mTimer.setButtonHold(10);
-  
-  mTimer.setShutterLag(10);
-  mTimer.setInterShootLag(1000); //max 2.5fps
-  mTimer.setLastTimeCameraTriggered(0);
-  
-  pinMode(mTurnOffLED, OUTPUT); //ambient light, Active low
-  digitalWrite(mTurnOffLED,LOW);
-  
-  pinMode(mPanelLcdLED, OUTPUT); // panel LED, active low
-  digitalWrite(mPanelLcdLED,LOW);
-  
-  pinMode(mTriggerOut, OUTPUT); // active high
-  digitalWrite(mTriggerOut,LOW);
-  
-  //  pinMode(preLED, OUTPUT); // ambient light active low
-  //  digitalWrite(preLED,LOW);
-  
-  digitalWrite(mFocusLED,HIGH);
-  pinMode(mFocusLED, OUTPUT); // pwm active low
-  digitalWrite(mFocusLED,HIGH);
-  
-  pinMode(mFocusOut, OUTPUT); // active high
-  digitalWrite(mFocusOut,LOW);
-  
-  digitalWrite(mLightDiagnosticsPin,LOW);
-  delay(500);
-  digitalWrite(mLightDiagnosticsPin,HIGH);
-  
-  mIsRunning = false;
-  
-  //multishot stuff -- testing defaults
-  //mGTakesCount = 3;
-  //mGTakesInterval = 2000;
-  //mLTakesCount = 2;
-  //mLTakesInterval = 500;
 }
 
 unsigned long GetBaseTimeToMarkStartOfShot()
@@ -533,7 +532,7 @@ void StartMulti()
 
 void CheckButtonStates()
 {
-  int myAnalogValue = analogRead(mButtonsOnPanel);
+  int myAnalogValue = analogRead(mDefaults.ButtonsOnPanel());
   boolean myRet = 1; // SEE NOTE BELOW
   // @TODO find out what myRet is for - it seems it does nothing
   
@@ -562,11 +561,11 @@ void CheckInputs()
 }
 
 /**
- * Look for character /code/ in the buffer and read the float that immediately follows it.
- * @return the value found.  If nothing is found, /val/ is returned.
- * @input theCode the character to look for.
- * @input theValue the return value if /code/ is not found.
- **/
+  * Look for character /code/ in the buffer and read the float that immediately follows it.
+  * @return the value found.  If nothing is found, /val/ is returned.
+  * @input theCode the character to look for.
+  * @input theValue the return value if /code/ is not found.
+  */
 float ParseNumber(char theCode,float theValue)
 {
   char *mypLocation = mBuffer;
@@ -582,8 +581,8 @@ float ParseNumber(char theCode,float theValue)
 }
 
 /**
- * Read the input buffer and find any recognized commands.  One G or M command per line.
- */
+  * Read the input buffer and find any recognized commands.  One G or M command per line.
+  */
 void ProcessGCommand() {
   // blank lines
   if (mBuffer[0]==';') return;
@@ -691,36 +690,3 @@ void CheckSerial() {
     Serial.print(myCharacter); // repeat it back so I know you got the message
   }
 }
-
-void loop() {
-  if (mIsRunning)
-  {
-    // Serial.print("loop-r");
-    CheckEvents();
-    CheckInputs();
-    
-    //later dev below...
-    //check events (again)
-    //update display
-    
-  }
-  else
-  {
-    CheckInputs();
-    CheckSerial();
-    
-    ////Serial.print("loop-n");
-    //update display (later development)
-  }
-}
-
-/**
- * write a string followed by a float to the serial line.  Convenient for debugging.
- * @input code the string.
- * @input val the float.
- */
-/*void debug_serial_output(char *code,float val)
-{
-  Serial.print(code);
-  Serial.println(val);
-}*/

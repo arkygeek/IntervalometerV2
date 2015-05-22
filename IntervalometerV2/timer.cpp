@@ -88,6 +88,8 @@ Timer& Timer::operator=(const Timer& theTimer)
   mDoneStopTrigger = theTimer.DoneStopTrigger();
 }
 
+// getters
+
 unsigned long Timer::FocusHold() const
 {
   return mFocusHold;
@@ -214,6 +216,8 @@ boolean Timer::DoneStopTrigger() const
 {
   return mDoneStopTrigger;
 }
+
+// setters
 
 void Timer::setFocusHold(unsigned long theFocusHold)
 {
