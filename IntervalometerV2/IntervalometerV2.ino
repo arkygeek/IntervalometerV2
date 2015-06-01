@@ -33,11 +33,16 @@
 
 #include <Arduino.h>
 #include <arduino.h>
-
 // local includes
 #include "LocalLibrary.h" // some prototypes live here for now
 #include "timer.h"
 #include "defaults.h"
+
+//#include </Applications/Arduino.app/Contents/Java/libraries/LiquidCrystal/src/LiquidCrystal.h>
+#include "LiquidCrystal.h"
+// initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(37, 36, 35, 34, 33, 32);// 9, 8, 3, 2);
+
 
 Timer mTimer;
 Defaults mDefaults;
@@ -50,6 +55,8 @@ Defaults mDefaults;
 #define BAUD       (115200)  // How fast is the Arduino talking?
 #define MAX_BUF    (64)  // What is the longest message Arduino can store?
 
+int mNumberOfShotsTaken = 0;
+int mNumberOfShotsOnScreen = 0;
 
 /* globals for g-code interpreting */
 char mBuffer[MAX_BUF]; // where we store the message until we get a ';'
@@ -94,11 +101,22 @@ int mMultishotLocalTakesCurrent;
 
 int sNextEvent;
 
-  /////////////////
- //  Functions  //
-/////////////////
+    /*/////////////////////////////////
+   //                               //|
+  //   Primary Arduino Functions   // |
+ //                               //  |
+///////////////////////////////////   |
+|                                 |  /
+|       setup() and loop()        | /
+|_________________________________*/
+ 
 
 void setup() {
+  
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.print("IV2");
+  
   pinMode(mDefaults.LightDiagnosticsPin(), OUTPUT);
   
   Serial.begin(BAUD); // open coms
@@ -154,6 +172,14 @@ void setup() {
 }
 
 void loop() {
+  if (mNumberOfShotsOnScreen != mNumberOfShotsTaken)
+  {
+    lcd.setCursor(0, 1);
+    // print the number of seconds since reset:
+    lcd.print(mNumberOfShotsTaken);
+    mNumberOfShotsOnScreen = mNumberOfShotsTaken;
+  }
+  
   if (mIsRunning)
   {
     // Serial.print("loop-r");
@@ -176,9 +202,11 @@ void loop() {
 }
 
 
-  /////////////////////////////////
- // Extra Functions to move out //
-/////////////////////////////////
+    /////////////////////////
+   //                     //
+  //   Extra Functions   //
+ //                     //
+/////////////////////////
 
 
 void SendZPos(long theInput) // microns
@@ -234,6 +262,7 @@ void CallLights()
 
 void CallTrigger()
 {
+  mNumberOfShotsTaken++;
   digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
   //mDoneSendTrigger = true;
   mTimer.setDoneSendTrigger(true);
@@ -243,7 +272,7 @@ void CallTrigger()
   Serial.println(millis());
   
   //store last trigger value using current sync value
-  //mLastTimeCameraTriggered = mShutterExpectedOpenTimeCalculated+mBaseTimeToMarkStartOfShot;
+  //mLastTimeCameraTriggered = mShutterExpectedOpenTimeCalculated + mBaseTimeToMarkStartOfShot;
   unsigned long myTemp = mTimer.ShutterExpectedOpenTimeCalculated();
   unsigned long myTemp2 = mTimer.BaseTimeToMarkStartOfShot();
   mTimer.setLastTimeCameraTriggered(myTemp + myTemp2);
@@ -261,7 +290,10 @@ void CallUnTrig()
   digitalWrite(mDefaults.FocusOut(),LOW); // active high
 }
 
-void CallResetOutputs() // for later implemention
+/**
+  * for later implemention
+  */
+void CallResetOutputs()
 {
   //ambient lighting on
   digitalWrite(mDefaults.TurnOffLED(),LOW); //ambient light, Active low
@@ -573,7 +605,6 @@ void CheckInputs()
 {
   CheckButtonStates();
   CheckEmergencyStopState();
-  
   // check if there is enough time then mess about with keyboard checking
 }
 

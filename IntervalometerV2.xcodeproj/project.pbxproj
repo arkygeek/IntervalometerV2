@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3F2F1F321B0C8F1600EB15A7 /* LocalLibrary.h in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */; };
 		3F2F1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino */; };
+		3F6B059D1B1CD3EB00CE1B7B /* LiquidCrystal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F6B059B1B1CD3EB00CE1B7B /* LiquidCrystal.cpp */; };
 		3F7038231B0F2ECC00485309 /* timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7038211B0F2ECC00485309 /* timer.cpp */; };
 		3F7038261B0F718300485309 /* defaults.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7038241B0F718300485309 /* defaults.cpp */; };
 		3FCF1F2C1B0C8F1600EB15A7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F2B1B0C8F1600EB15A7 /* main.cpp */; };
@@ -404,6 +405,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3F6B059B1B1CD3EB00CE1B7B /* LiquidCrystal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LiquidCrystal.cpp; sourceTree = "<group>"; };
+		3F6B059C1B1CD3EB00CE1B7B /* LiquidCrystal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LiquidCrystal.h; sourceTree = "<group>"; };
 		3F7038211B0F2ECC00485309 /* timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = timer.cpp; sourceTree = "<group>"; };
 		3F7038221B0F2ECC00485309 /* timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
 		3F7038241B0F718300485309 /* defaults.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = defaults.cpp; sourceTree = "<group>"; };
@@ -928,6 +931,8 @@
 				3FCF1F2B1B0C8F1600EB15A7 /* main.cpp */,
 				3FCF1F2D1B0C8F1600EB15A7 /* Makefile */,
 				3FCF1F2F1B0C8F1600EB15A7 /* ReadMe.txt */,
+				3F6B059B1B1CD3EB00CE1B7B /* LiquidCrystal.cpp */,
+				3F6B059C1B1CD3EB00CE1B7B /* LiquidCrystal.h */,
 				3FCF1F301B0C8F1600EB15A7 /* LocalLibrary.cpp */,
 				3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */,
 				3F7038211B0F2ECC00485309 /* timer.cpp */,
@@ -2517,6 +2522,7 @@
 				AA2A150520104738AA000060 /* Mailbox.cpp in Sources */,
 				AA2A150520104738AA000061 /* Mailbox.h in Sources */,
 				AA2A150520104738AA000062 /* Process.cpp in Sources */,
+				3F6B059D1B1CD3EB00CE1B7B /* LiquidCrystal.cpp in Sources */,
 				AA2A150520104738AA000063 /* Process.h in Sources */,
 				AA2A150520104738AA000064 /* YunClient.cpp in Sources */,
 				AA2A150520104738AA000065 /* YunClient.h in Sources */,
