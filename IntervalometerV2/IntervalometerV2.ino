@@ -31,6 +31,12 @@
 \***************************************************************************/
 
 // test gitHub is working properly
+// ok, it works - but I needed to enter my username and pw for gitHub
+// which is probably ok. However, I am not sure how that will work for
+// collaborating with JR :-/  hmmm
+// JR may have to use git@github.com:arkygeek/IntervalometerV2.git
+// as per the suggestion at:
+// http://www.pavley.com/2013/06/12/getting-xcode-and-github-to-work-together-like-besties/
 
 #include <Arduino.h>
 #include <arduino.h>
