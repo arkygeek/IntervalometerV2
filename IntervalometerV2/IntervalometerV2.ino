@@ -33,13 +33,49 @@
 
 #include <Arduino.h>
 #include <arduino.h>
+
 // local includes
 #include "LocalLibrary.h" // some prototypes live here for now
 #include "timer.h"
 #include "defaults.h"
-
-//#include </Applications/Arduino.app/Contents/Java/libraries/LiquidCrystal/src/LiquidCrystal.h>
 #include "LiquidCrystal.h"
+
+/***************************************************************************\
+ *                             *                                           *
+ *  ARDUINO PIN CONFIGURATION  *                                           *
+ *                             *                                           *
+ *******************************                                           *
+ *                                                                         *
+ *                                                                         *
+ *                          AdaFruit Ind.                                  *
+ *          PIN  |  STD   | Logger Shield |     Mine     |  Intervalometer *
+ * ==============+========+===============+==============+================ *
+ * DIGITAL   13  |  SCK   |       x       |              |                 *
+ *           12  |  MISO  |       x       |              |                 *
+ *           11~ |  MOSI  |       x       |              |                 *
+ *           10~ |  SS    |       x       |   Kill LED   |    Kill LED     *
+ *               +--------+---------------+--------------+---------------- *
+ *            9~ |        |               |   LCD LED    |    LCD LED      *
+ *            8  |        |               |              |   Keyboard C    *
+ *            7  |        |               | Trigger OUT  |  Trigger OUT    *
+ *            6~ |        |               |  Room Light  |   Room Light    *
+ *            5~ |        |               |  Focus LED   |    Focus LED    *
+ *               +--------+---------------+--------------+---------------- *
+ *            4  |        |               |  Focus OUT   |    Focus OUT    *
+ *            3~ |  INT   |               |              |   Keyboard D    *
+ *            2  |  INT   |               |     STOP     |      STOP       *
+ *            1  |  TX    |               |              |                 *
+ *            0  |  RX    |               |              |                 *
+ * ==============+========+===============+==============+================ *
+ * ANALOG     0  |        |               |    Sensor    |     Sensor      *
+ *            1  |        |               | Focus Button |  Focus Button   *
+ *            2  |        |               |Trigger Button|  Trigger Button *
+ *            3  |        |               | Start Button |  Start Button   *
+ *            4  |  I2C   |       x       |   LCD I2C    |      LCD I2C    *
+ *            5  |  I2C   |       x       |   LCD I2C    |      LCD I2C    *
+\***************************************************************************/
+
+
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(37, 36, 35, 34, 33, 32);// 9, 8, 3, 2);
 
@@ -202,11 +238,20 @@ void loop() {
 }
 
 
-    /////////////////////////
-   //                     //
-  //   Extra Functions   //
- //                     //
-/////////////////////////
+     /*///////////////////////////////
+    //                             //|
+   //      Additional Functions   // |
+  //                             //  |
+ /////////////////////////////////   |
+ |                               |   |
+ | void SendZPos(long theInput)  |   |
+ | void CallMech()               |   |
+ | void CallFocus()              |   |
+ | void CallLights()             |   |
+ | void CallTrigger()            |   |
+ | void CallUnTrig()             |  /
+ | CallResetOutputs()            | /
+ |_______________________________*/
 
 
 void SendZPos(long theInput) // microns
@@ -334,10 +379,11 @@ void EndMultiShot()
   mIsRunning = false; // end sequence
   Serial.println("Ending multi");
 }
-
-void UpdateGDesired(unsigned long theInput) // TODO -- check this actually works
+/**
+ *  update only if larger, but tolerant of clockovers
+ */
+void UpdateGlobalDesired(unsigned long theInput) // TODO -- check this actually works
 {
-  //update only if larger, but tolerant of clockovers
   if (theInput - mTimer.GlobalDesired() < 3000000000uL)
   {
     mTimer.setGlobalDesired(theInput);
@@ -460,21 +506,21 @@ void AdvanceMultiShot()
       else //mGTakes tickover
       {
         //gDesired = last_sync+mGTakesInterval; //TODO -- fix
-        UpdateGDesired(mGlobalTakesLastDesired + mGlobalTakesInterval);
+        UpdateGlobalDesired(mGlobalTakesLastDesired + mGlobalTakesInterval);
       }
       mGlobalTakesLastDesired = mTimer.GlobalDesired();
     }
     else //mMech tickover
     {
       //setMotorPosition();X done in shot setup
-      UpdateGDesired(mMultishotMechLastDesired + mMultishotMechInterval);
+      UpdateGlobalDesired(mMultishotMechLastDesired + mMultishotMechInterval);
     }
     mMultishotMechLastDesired = mTimer.GlobalDesired();
   }
   else //mLTakes tick
   {
     //gDesired = last_sync+mLTakesInterval;
-    UpdateGDesired(mMultishotLocalTakesLastDesired+mMultishotLocalTakesInterval);
+    UpdateGlobalDesired(mMultishotLocalTakesLastDesired+mMultishotLocalTakesInterval);
   }
   
   mMultishotLocalTakesLastDesired = mTimer.GlobalDesired();
@@ -559,7 +605,6 @@ void StartMulti()
   Serial.println("starting multi");
   mTimer.setUseMechanicalMovement(true);
   mTimer.setUseDesired(true);
-  
   //gDesired = mBaseTimeToMarkStartOfShot; // desired not relevent for single shots
   mIsRunning = true;
   mShootingMode = MULTISHOT;
