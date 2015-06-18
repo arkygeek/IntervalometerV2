@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3F223B2C1B31BD2600CD8E0A /* Shoot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F223B2A1B31BD2600CD8E0A /* Shoot.cpp */; };
 		3F2F1F321B0C8F1600EB15A7 /* LocalLibrary.h in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */; };
 		3F2F1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino in Sources */ = {isa = PBXBuildFile; fileRef = 3FCF1F9D1B0C8F1600EB15A7 /* IntervalometerV2.ino */; };
 		3F6B059D1B1CD3EB00CE1B7B /* LiquidCrystal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F6B059B1B1CD3EB00CE1B7B /* LiquidCrystal.cpp */; };
@@ -405,6 +406,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3F223B2A1B31BD2600CD8E0A /* Shoot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Shoot.cpp; sourceTree = "<group>"; };
+		3F223B2B1B31BD2600CD8E0A /* Shoot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Shoot.h; sourceTree = "<group>"; };
 		3F6B059B1B1CD3EB00CE1B7B /* LiquidCrystal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LiquidCrystal.cpp; sourceTree = "<group>"; };
 		3F6B059C1B1CD3EB00CE1B7B /* LiquidCrystal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LiquidCrystal.h; sourceTree = "<group>"; };
 		3F7038211B0F2ECC00485309 /* timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = timer.cpp; sourceTree = "<group>"; };
@@ -935,6 +938,8 @@
 				3F6B059C1B1CD3EB00CE1B7B /* LiquidCrystal.h */,
 				3FCF1F301B0C8F1600EB15A7 /* LocalLibrary.cpp */,
 				3FCF1F321B0C8F1600EB15A7 /* LocalLibrary.h */,
+				3F223B2A1B31BD2600CD8E0A /* Shoot.cpp */,
+				3F223B2B1B31BD2600CD8E0A /* Shoot.h */,
 				3F7038211B0F2ECC00485309 /* timer.cpp */,
 				3F7038221B0F2ECC00485309 /* timer.h */,
 				3F7038241B0F718300485309 /* defaults.cpp */,
@@ -2836,6 +2841,7 @@
 				AA2A150520104738AA0001F2 /* board.h in Sources */,
 				AA2A150520104738AA0001F3 /* board.h.my in Sources */,
 				AA2A150520104738AA0001F5 /* evk1105.h in Sources */,
+				3F223B2C1B31BD2600CD8E0A /* Shoot.cpp in Sources */,
 				AA2A150520104738AA0001F6 /* led.c in Sources */,
 				AA2A150520104738AA0001F7 /* led.h in Sources */,
 				AA2A150520104738AA0001FC /* at45dbx.c in Sources */,

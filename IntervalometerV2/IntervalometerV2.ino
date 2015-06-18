@@ -45,7 +45,11 @@
 #include "LocalLibrary.h" // some prototypes live here for now
 #include "timer.h"
 #include "defaults.h"
+#include "Shoot.h"
 #include "LiquidCrystal.h"
+
+#define SINGLESHOT 1
+#define MULTISHOT  2
 
 /***************************************************************************\
  *                             *                                           *
@@ -61,13 +65,13 @@
  *           12  |  MISO  |       x       |              |                 *
  *           11~ |  MOSI  |       x       |              |                 *
  *           10~ |  SS    |       x       |   Kill LED   |    Kill LED     *
- *               +--------+---------------+--------------+---------------- *
+ *          -----+--------+---------------+--------------+---------------- *
  *            9~ |        |               |   LCD LED    |    LCD LED      *
  *            8  |        |               |              |   Keyboard C    *
  *            7  |        |               | Trigger OUT  |  Trigger OUT    *
  *            6~ |        |               |  Room Light  |   Room Light    *
  *            5~ |        |               |  Focus LED   |    Focus LED    *
- *               +--------+---------------+--------------+---------------- *
+ *          -----+--------+---------------+--------------+---------------- *
  *            4  |        |               |  Focus OUT   |    Focus OUT    *
  *            3~ |  INT   |               |              |   Keyboard D    *
  *            2  |  INT   |               |     STOP     |      STOP       *
@@ -84,8 +88,7 @@
 
 
 // initialize the library with the numbers of the interface pins
-LiquidCrystal lcd(37, 36, 35, 34, 33, 32);// 9, 8, 3, 2);
-
+LiquidCrystal mLcd(37, 36, 35, 34, 33, 32);
 
 Timer mTimer;
 Defaults mDefaults;
@@ -107,40 +110,7 @@ int mBufferSize; // how much is in the buffer
 long mLineNumber=0;
 boolean mIsRunning;
 
-//vars for control of multi-shot stuff
-
-int mShootingMode;
-#define SINGLESHOT 1
-#define MULTISHOT  2
-
-// global takes (for timelapse)
-int mGlobalTakesCount = 2;
-unsigned long mGlobalTakesInterval = 20000;
-unsigned long mGlobalTakesLastDesired;
-int mGlobalTakesCurrent;
-
-// m is multishot mode
-// motor control vars
-boolean mMultishotMechActive;
-unsigned long mMultishotMechLastActive;
-int mMultishotMechCount = 3;
-unsigned long mMultishotMechInterval = 3000;
-unsigned long mMultishotMechLastDesired;
-int mMultishotMechCurrent;
-
-long mMultishotMechMinPoint= 30070; //stored in microns
-long mMultishotMechMaxPoint= 40000;
-long mMultishotMechStepSize= 1000;
-long mMultishotMechCurrentPoint;
-
-
-//local takes (for multishot exposure bracketing etc)
-int mMultishotLocalTakesCount = 2;
-unsigned long mMultishotLocalTakesInterval = 0;
-unsigned long mMultishotLocalTakesLastDesired;
-int mMultishotLocalTakesCurrent;
-
-//int shots; //(number of shots to take, after all other looping, may be 1;setting)
+Shoot mShoot;
 
 int sNextEvent;
 
@@ -156,9 +126,9 @@ int sNextEvent;
 
 void setup() {
   
-  lcd.begin(16, 2);
+  mLcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("IV2");
+  mLcd.print("IV2");
   
   pinMode(mDefaults.LightDiagnosticsPin(), OUTPUT);
   
@@ -207,7 +177,7 @@ void setup() {
   
   mIsRunning = false;
   
-  //multishot stuff -- testing defaults
+  //Shoot stuff -- testing defaults
   //mGTakesCount = 3;
   //mGTakesInterval = 2000;
   //mLTakesCount = 2;
@@ -217,9 +187,9 @@ void setup() {
 void loop() {
   if (mNumberOfShotsOnScreen != mNumberOfShotsTaken)
   {
-    lcd.setCursor(0, 1);
+    mLcd.setCursor(0, 1);
     // print the number of seconds since reset:
-    lcd.print(mNumberOfShotsTaken);
+    mLcd.print(mNumberOfShotsTaken);
     mNumberOfShotsOnScreen = mNumberOfShotsTaken;
   }
   
@@ -247,17 +217,17 @@ void loop() {
 
      /*///////////////////////////////
     //                             //|
-   //      Additional Functions   // |
+   //     Additional Functions    // |
   //                             //  |
  /////////////////////////////////   |
  |                               |   |
  | void SendZPos(long theInput)  |   |
- | void CallMech()               |   |
- | void CallFocus()              |   |
- | void CallLights()             |   |
- | void CallTrigger()            |   |
- | void CallUnTrig()             |  /
- | CallResetOutputs()            | /
+ | void Mech()                   |   |
+ | void Focus()                  |  ,|
+ | void Lights()                 | /||
+ | void Trigger()                ||_||
+ | void UnTrig()                 || |/
+ | void ResetOutputs()           ||
  |_______________________________*/
 
 
@@ -272,20 +242,12 @@ void SendZPos(long theInput) // microns
 
 void CallMech()
 {
-  //digitalWrite(LIGHTDIAGPIN,LOW);
-  //sMechDn = true;first action, so no check needed
-  
-  
-  mMultishotMechCurrentPoint = (mMultishotMechCurrent
-                                * mMultishotMechStepSize
-                                + mMultishotMechMinPoint);
-  
-  //send gcode
-  SendZPos (mMultishotMechCurrentPoint); // all done in microns
-  mMultishotMechActive = true;
+  //send gcode, all done in microns
+  SendZPos (mShoot.MechCurrentPoint());
+  mShoot.setMechActive(true);
 }
 
-void CallFocus()
+void Focus()
 {
   digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
   
@@ -297,7 +259,7 @@ void CallFocus()
   digitalWrite(mDefaults.FocusOut(),HIGH); // active high
 }
 
-void CallLights()
+void Lights()
 {
   digitalWrite(mDefaults.LightDiagnosticsPin(),HIGH);
   //mDoneSetLightingMode = true;
@@ -312,7 +274,7 @@ void CallLights()
   digitalWrite(mDefaults.FocusLED(),HIGH); // pwm active low
 }
 
-void CallTrigger()
+void Shutter()
 {
   mNumberOfShotsTaken++;
   digitalWrite(mDefaults.LightDiagnosticsPin(),LOW);
@@ -330,7 +292,7 @@ void CallTrigger()
   mTimer.setLastTimeCameraTriggered(myTemp + myTemp2);
 }
 
-void CallUnTrig()
+void PostShutter()
 {
   digitalWrite(mDefaults.LightDiagnosticsPin(),HIGH);
   mTimer.setDoneStopTrigger(true);
@@ -345,7 +307,7 @@ void CallUnTrig()
 /**
   * for later implemention
   */
-void CallResetOutputs()
+void ResetOutputs()
 {
   //ambient lighting on
   digitalWrite(mDefaults.TurnOffLED(),LOW); //ambient light, Active low
@@ -373,12 +335,12 @@ void Help() {
   Serial.println(F("T100;- this help message"));
 }
 
-unsigned long GetBaseTimeToMarkStartOfShot()
+unsigned long BaseTimeToMarkStartOfShot()
 {
   return millis() - mTimer.BaseTimeToMarkStartOfShot();
 }
 
-void EndMultiShot()
+void EndShoot()
 {
   //if using mech, return motor to start
   //lighting??
@@ -400,20 +362,25 @@ void UpdateGlobalDesired(unsigned long theInput) // TODO -- check this actually 
 void RecalculateShot()
 {
   //select max value from... and put in sync
-  long myTime;
+  long myMinimiumTime;
   
   // to prevent camera being over worked do this:
   //mShutterExpectedOpenTimeCalculated = mLastTimeCameraTriggered+mInterShotLag
   //                                     - mBaseTimeToMarkStartOfShot;
   
-  long myTemp1 = mTimer.LastTimeCameraTriggered();
-  long mytemp2 = mTimer.BaseTimeToMarkStartOfShot();
-  long temp = myTemp1-mytemp2;
-  mTimer.setShutterExpectedOpenTimeCalculated(temp);
+  // long myLastTimeCameraTriggered = mTimer.LastTimeCameraTriggered();
+  // long myBaseTimeToMarkStartOfShot = mTimer.BaseTimeToMarkStartOfShot();
+  // long temp = myLastTimeCameraTriggered - myBaseTimeToMarkStartOfShot;
+  long ExpectedOpenTime = mTimer.LastTimeCameraTriggered()
+              - mTimer.BaseTimeToMarkStartOfShot();
+  
+  mTimer.setShutterExpectedOpenTimeCalculated(ExpectedOpenTime);
+  
   // @TODO: is this referenced correctly, mBaseTimeToMarkStartOfShot???
   //        ... I think so.
   
-  //sanity check for the above, default to ~1fps if the it's trying more than a minute delay.
+  // sanity check for the above
+  // default to ~1fps if the it's trying more than a minute delay.
   if (mTimer.ShutterExpectedOpenTimeCalculated() > 60000)
   {
     mTimer.setShutterExpectedOpenTimeCalculated(1000);
@@ -422,18 +389,22 @@ void RecalculateShot()
   
   //TODO: check stage_last_moved+stage_lag
   //insert sanity check for the above??
-  // Serial.print("syncA= ");Serial.println(sync);
-  // Serial.print("last_sync= ");Serial.println(last_sync);
   
-  // quickest the processes can be sorted out in:
-  myTime = millis()
-           + mTimer.FocusHold()
-           + mTimer.LightingLag()
-           - mTimer.BaseTimeToMarkStartOfShot();
+  // Serial.print("syncA= ");
+  // Serial.println(sync);
   
-  if (myTime > mTimer.ShutterExpectedOpenTimeCalculated())
+  // Serial.print("last_sync= ");
+  // Serial.println(last_sync);
+  
+  // quickest the processes can be sorted out:
+  myMinimiumTime = millis()
+                   + mTimer.FocusHold()
+                   + mTimer.LightingLag()
+                   - mTimer.BaseTimeToMarkStartOfShot();
+  
+  if (myMinimiumTime > mTimer.ShutterExpectedOpenTimeCalculated())
   {
-    mTimer.setShutterExpectedOpenTimeCalculated(myTime);
+    mTimer.setShutterExpectedOpenTimeCalculated(myMinimiumTime);
   }
   
   //Serial.print("t= ");Serial.println(t);
@@ -449,21 +420,36 @@ void RecalculateShot()
   
   mTimer.setTimeToSetLightingMode(mTimer.ShutterExpectedOpenTimeCalculated()
                                   - mTimer.LightingLag());
+  
   mTimer.setTimeToStartFocusMode(mTimer.ShutterExpectedOpenTimeCalculated()
                                  - mTimer.LightingLag()
                                  - mTimer.FocusHold());
+  
   mTimer.setTimeToSendTrigger(mTimer.ShutterExpectedOpenTimeCalculated()
                               - mTimer.ShutterLag());
+  
   mTimer.setTimeToStopTrigger(mTimer.TimeToSendTrigger() + mTimer.ButtonHold());
+  
   mTimer.setTimeToRestart(mTimer.ShutterExpectedOpenTimeCalculated()
                           + mTimer.ShutterHold());
   
-  //Serial.print("glabal sync= ");Serial.println(mBaseTimeToMarkStartOfShot+sync);
-  //Serial.print("sLightsTime= ");Serial.println(sLightsTime);
-  //Serial.print("sFocusTime= ");Serial.println(sFocusTime);
-  //Serial.print("TriggerTime= ");Serial.println(sTriggerTime);
-  //Serial.print("unTrigTime= ");Serial.println(sUnTrigTime);
-  //Serial.print("ResetTime= ");Serial.println(sResetTime);
+  // Serial.print("glabal sync= ");
+  // Serial.println(mBaseTimeToMarkStartOfShot+sync);
+  
+  // Serial.print("sLightsTime= ");
+  // Serial.println(sLightsTime);
+  
+  // Serial.print("sFocusTime= ");
+  // Serial.println(sFocusTime);
+  
+  // Serial.print("TriggerTime= ");
+  // Serial.println(sTriggerTime);
+  
+  // Serial.print("unTrigTime= ");
+  // Serial.println(sUnTrigTime);
+  
+  // Serial.print("ResetTime= ");
+  // Serial.println(sResetTime);
 }
 
 void StartShot()
@@ -488,7 +474,8 @@ void StartShot()
   if (mTimer.UseMechanicalMovement())
   {
     CallMech();
-    // @TODO -- work out how ot wait for mechanical stuff -- ignore for now.
+    // @TODO -- work out how ot wait for mechanical stuff
+    // ignoring for now.
   }
   
   RecalculateShot();
@@ -496,41 +483,44 @@ void StartShot()
   mTimer.FocusHold() > 0 ? sNextEvent=EFOCUS : sNextEvent=ELIGHTS;
 }
 
-void AdvanceMultiShot()
+void AdvanceShoot()
 {
   // check for clockover
-  if (++mMultishotLocalTakesCurrent >= mMultishotLocalTakesCount)
+  mShoot.IncrementLocalTakesCurrent();
+  if (mShoot.LocalTakesCurrent() >= mShoot.LocalTakesCount())
   {  // clockover
-    mMultishotLocalTakesCurrent = 0;
-    if (++mMultishotMechCurrent >= mMultishotMechCount)
+    mShoot.setLocalTakesCurrent(0);
+    mShoot.IncrementMechCurrent();
+    if (mShoot.MechCurrent() >= mShoot.MechCount())
     {
-      mMultishotMechCurrent = 0;
-      if (++mGlobalTakesCurrent >= mGlobalTakesCount)
+      mShoot.setMechCurrent(0);
+      mShoot.IncrementGlobalTakesCurrent();
+      if (mShoot.GlobalTakesCurrent() >= mShoot.GlobalTakesCount())
          {
-           mGlobalTakesCurrent = 0;
-           EndMultiShot();
+           mShoot.setGlobalTakesCurrent(0);
+           EndShoot();
          }
       else //mGTakes tickover
       {
         //gDesired = last_sync+mGTakesInterval; //TODO -- fix
-        UpdateGlobalDesired(mGlobalTakesLastDesired + mGlobalTakesInterval);
+        UpdateGlobalDesired(mShoot.GlobalTakesLastDesired() + mShoot.GlobalTakesInterval());
       }
-      mGlobalTakesLastDesired = mTimer.GlobalDesired();
+      mShoot.setGlobalTakesLastDesired(mTimer.GlobalDesired());
     }
     else //mMech tickover
     {
       //setMotorPosition();X done in shot setup
-      UpdateGlobalDesired(mMultishotMechLastDesired + mMultishotMechInterval);
+      UpdateGlobalDesired (mShoot.MechLastDesired() + mShoot.MechInterval());
     }
-    mMultishotMechLastDesired = mTimer.GlobalDesired();
+    mShoot.setMechLastDesired (mTimer.GlobalDesired());
   }
   else //mLTakes tick
   {
     //gDesired = last_sync+mLTakesInterval;
-    UpdateGlobalDesired(mMultishotLocalTakesLastDesired+mMultishotLocalTakesInterval);
+    UpdateGlobalDesired(mShoot.LocalTakesLastDesired() + mShoot.LocalTakesInterval());
   }
   
-  mMultishotLocalTakesLastDesired = mTimer.GlobalDesired();
+  mShoot.setLocalTakesLastDesired(mTimer.GlobalDesired());
   
   if (mIsRunning) {StartShot();}
   
@@ -538,51 +528,71 @@ void AdvanceMultiShot()
   // NOT when clockover of the level above happenes.
 }
 
+/*
 void EndShot()
 {
   // call reset outputs to sort out lights etc
   // later this should be divided up to avoid strobing the room light
   
-  CallResetOutputs();
+  ResetOutputs();
   
-  if (mShootingMode == MULTISHOT )
+  mShoot.ShootingMode() == MULTISHOT ? AdvanceShoot() : mIsRunning = false; //single shot mode
+  
+}
+*/
+
+
+
+
+
+
+
+void EndShot()
+{
+  // call reset outputs to sort out lights etc
+  // later this should be divided up to avoid strobing the room light
+  
+  ResetOutputs();
+  
+  // single shot mode
+  if (mShoot.ShootingMode() == MULTISHOT)
   {
-    AdvanceMultiShot();
+    AdvanceShoot();
   }
   else
   {
-    mIsRunning = false; //single shot mode
+    mIsRunning = false;
   }
 }
 
 void CheckEvents()
 {
   unsigned long myNewTime;
-  myNewTime = GetBaseTimeToMarkStartOfShot();
+  myNewTime = BaseTimeToMarkStartOfShot();
   
   if (!mTimer.DoneStartFocusMode()
       && (mTimer.TimeToStartFocusMode()
           <= myNewTime))
   {
-    CallFocus();
+    Focus();
   }
   if (!mTimer.DoneSetLightingMode()
       && (mTimer.TimeToSetLightingMode()
           <= myNewTime))
   {
-    CallLights();
+    Lights();
   }
   if (!mTimer.DoneSendTrigger()
       && (mTimer.TimeToSendTrigger()
           <= myNewTime))
   {
-    CallTrigger();
+    Shutter();
   }
   if (!mTimer.DoneStopTrigger()
       && (mTimer.TimeToStopTrigger()
           <= myNewTime))
   {
-    CallUnTrig();
+    PostShutter();
   }
   
   //reset time??
@@ -601,7 +611,7 @@ void StartSingle()
   mTimer.setUseDesired(false);
   //gDesired = mBaseTimeToMarkStartOfShot; // desired not relevent for single shots
   mIsRunning = true;
-  mShootingMode = SINGLESHOT;
+  mShoot.setShootingMode(SINGLESHOT);
   StartShot();
 }
 
@@ -614,19 +624,19 @@ void StartMulti()
   mTimer.setUseDesired(true);
   //gDesired = mBaseTimeToMarkStartOfShot; // desired not relevent for single shots
   mIsRunning = true;
-  mShootingMode = MULTISHOT;
+  mShoot.setShootingMode (MULTISHOT);
   
   // global takes (for timelapse)
-  mGlobalTakesLastDesired = millis();
-  mGlobalTakesCurrent = 0;
+  mShoot.setGlobalTakesLastDesired (millis());
+  mShoot.setGlobalTakesCurrent (0);
   
   //mech for motorised stage moves
-  mMultishotMechLastDesired = millis();
-  mMultishotMechCurrent = 0;
+  mShoot.setMechLastDesired (millis());
+  mShoot.setMechCurrent(0);
   
-  //local takes (for multishot exposure bracketing etc)
-  mMultishotLocalTakesLastDesired = millis();
-  mMultishotLocalTakesCurrent = 0;
+  //local takes (for Shoot exposure bracketing etc)
+  mShoot.setLocalTakesLastDesired (millis());
+  mShoot.setLocalTakesCurrent (0);
   
   StartShot();
 }
