@@ -52,7 +52,7 @@ public:
   long MechStepSize() const;
   long MechCurrentPoint() const;
   
-  //local takes (for ultishot exposure bracketing etc)
+  //local takes (for multishot exposure bracketing etc)
   int LocalTakesCount() const;
   unsigned long LocalTakesInterval() const;
   unsigned long LocalTakesLastDesired() const;

@@ -367,14 +367,11 @@ void RecalculateShot()
   // to prevent camera being over worked do this:
   //mShutterExpectedOpenTimeCalculated = mLastTimeCameraTriggered+mInterShotLag
   //                                     - mBaseTimeToMarkStartOfShot;
+
+  long myExpectedOpenTime = mTimer.LastTimeCameraTriggered()
+                            - mTimer.BaseTimeToMarkStartOfShot();
   
-  // long myLastTimeCameraTriggered = mTimer.LastTimeCameraTriggered();
-  // long myBaseTimeToMarkStartOfShot = mTimer.BaseTimeToMarkStartOfShot();
-  // long temp = myLastTimeCameraTriggered - myBaseTimeToMarkStartOfShot;
-  long ExpectedOpenTime = mTimer.LastTimeCameraTriggered()
-              - mTimer.BaseTimeToMarkStartOfShot();
-  
-  mTimer.setShutterExpectedOpenTimeCalculated(ExpectedOpenTime);
+  mTimer.setShutterExpectedOpenTimeCalculated(myExpectedOpenTime);
   
   // @TODO: is this referenced correctly, mBaseTimeToMarkStartOfShot???
   //        ... I think so.
@@ -387,15 +384,6 @@ void RecalculateShot()
     Serial.println("err: Intershot_lag stuffup");
   }
   
-  //TODO: check stage_last_moved+stage_lag
-  //insert sanity check for the above??
-  
-  // Serial.print("syncA= ");
-  // Serial.println(sync);
-  
-  // Serial.print("last_sync= ");
-  // Serial.println(last_sync);
-  
   // quickest the processes can be sorted out:
   myMinimiumTime = millis()
                    + mTimer.FocusHold()
@@ -407,13 +395,10 @@ void RecalculateShot()
     mTimer.setShutterExpectedOpenTimeCalculated(myMinimiumTime);
   }
   
-  //Serial.print("t= ");Serial.println(t);
-  //Serial.print("syncB= ");Serial.println(sync);
-  //Serial.print("mBaseTimeToMarkStartOfShot= ");Serial.println(mBaseTimeToMarkStartOfShot);
-  
   // if the desired target time is actually attainable
   // (ie, later than soonest possible time), go with that.
-  if (mTimer.UseDesired() && mTimer.Desired() > mTimer.ShutterExpectedOpenTimeCalculated())
+  if (mTimer.UseDesired() && mTimer.Desired()
+      > mTimer.ShutterExpectedOpenTimeCalculated() )
   {
     mTimer.setShutterExpectedOpenTimeCalculated(mTimer.Desired());
   }
@@ -462,7 +447,7 @@ void StartShot()
   if (mTimer.UseDesired())
   {
     mTimer.setDesired(mTimer.GlobalDesired()
-                      - mTimer.BaseTimeToMarkStartOfShot());
+                      - mTimer.BaseTimeToMarkStartOfShot() );
   }
   
   mTimer.setDoneStartFocusMode(false);
@@ -503,7 +488,8 @@ void AdvanceShoot()
       else //mGTakes tickover
       {
         //gDesired = last_sync+mGTakesInterval; //TODO -- fix
-        UpdateGlobalDesired(mShoot.GlobalTakesLastDesired() + mShoot.GlobalTakesInterval());
+        UpdateGlobalDesired( mShoot.GlobalTakesLastDesired()
+                             + mShoot.GlobalTakesInterval());
       }
       mShoot.setGlobalTakesLastDesired(mTimer.GlobalDesired());
     }
@@ -527,25 +513,6 @@ void AdvanceShoot()
   // tickovers only happen between normal shots of that level,
   // NOT when clockover of the level above happenes.
 }
-
-/*
-void EndShot()
-{
-  // call reset outputs to sort out lights etc
-  // later this should be divided up to avoid strobing the room light
-  
-  ResetOutputs();
-  
-  mShoot.ShootingMode() == MULTISHOT ? AdvanceShoot() : mIsRunning = false; //single shot mode
-  
-}
-*/
-
-
-
-
-
-
 
 void EndShot()
 {
